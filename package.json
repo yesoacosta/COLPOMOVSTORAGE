@@ -1,7 +1,7 @@
 {
   "name": "colpovision-app",
   "version": "1.0.0",
-  "type": "module",  <-- ¡Esta es la línea clave que debes añadir!
+  "type": "module", 
   "description": "Aplicación de informes colposcópicos",
   "scripts": {
     "start": "serve"
@@ -10,3 +10,4 @@
     "serve": "^14.0.0"
   }
 }
+
