@@ -10,8 +10,7 @@
         /* Estilos CSS de la aplicación */
         body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; color: #1f2937; }
         .dark body { background-color: #121212; color: #e2e8f0; }
-        .dark #app-container { background-color: #1f2937; }
-        .dark .bg-white { background-color: #1f2937; }
+        .dark #app-container, .dark .bg-white { background-color: #1f2937; }
         .dark .patient-card { background-color: #374151; border-color: #4b5563; }
         .dark .report-editor { background-color: #1f2937; color: #e2e8f0; border-color: #4b5563; }
         .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #e2e8f0; }
@@ -45,13 +44,15 @@
                 <div><label for="social-security" class="block font-semibold mb-2">Obra Social</label><input type="text" id="social-security" class="w-full p-4 border-2 border-gray-300 rounded-xl"></div>
                 <div><label for="medical-history" class="block font-semibold mb-2">Historial Médico</label><textarea id="medical-history" rows="4" class="w-full p-4 border-2 border-gray-300 rounded-xl"></textarea></div>
                 <div><label for="colpo-image" class="block font-semibold mb-2">Imagen Colposcópica</label><input type="file" id="colpo-image" accept="image/*" class="w-full p-4 border-2 border-gray-300 rounded-xl"><img id="image-preview" class="mt-4 hidden w-full h-64 object-contain rounded-xl border"></div>
-                <div id="action-buttons" class="space-y-4 pt-4">
+                <div class="space-y-4 pt-4">
                     <button type="button" id="analyze-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Analizar y Generar Informe con IA</button>
                     <div class="flex space-x-4"><button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl">Guardar Datos</button><button type="button" id="cancel-form-btn" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-xl">Cancelar</button></div>
                 </div>
             </form>
         </div>
-        </div>
+        <div id="loading-overlay" class="items-center justify-center"><div class="text-center"><div class="spinner mb-6"></div><p id="loading-message" class="text-xl font-semibold text-gray-700 dark:text-gray-200"></p></div></div>
+    </div>
+    
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
@@ -69,12 +70,176 @@
         const db = firebase.firestore();
         const storage = firebase.storage();
         
-        // CORRECCIÓN FINAL: Usamos la ruta relativa porque el HTML y la API vivirán en el mismo dominio de Vercel
         const apiUrl = "/api/generate";
 
-        // Lógica de la aplicación
+        // Lógica COMPLETA de la aplicación
         window.onload = function() {
-            // El resto del código JavaScript va aquí...
+            // --- Referencias a los elementos de la página ---
+            const screens = { list: document.getElementById('patient-list-screen'), form: document.getElementById('patient-form-screen') };
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingMessage = document.getElementById('loading-message');
+            const patientListEl = document.getElementById('patient-list');
+            const patientForm = document.getElementById('patient-form');
+            const addPatientBtn = document.getElementById('add-patient-btn');
+            const cancelFormBtn = document.getElementById('cancel-form-btn');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const imageInput = document.getElementById('colpo-image');
+            const imagePreview = document.getElementById('image-preview');
+            const patientSearch = document.getElementById('patient-search');
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+            // --- Variables Globales ---
+            let patients = [];
+            let currentPatient = null;
+            let currentImageFile = null;
+            let unsubscribe = null;
+
+            // --- Funciones Auxiliares ---
+            function showLoading(message) { loadingMessage.textContent = message; loadingOverlay.style.display = 'flex'; }
+            function hideLoading() { loadingOverlay.style.display = 'none'; }
+            function showScreen(screen) { Object.values(screens).forEach(s => s.classList.add('hidden')); screen.classList.remove('hidden'); }
+            
+            // --- Lógica del Modo Oscuro ---
+            function applyTheme() {
+                if (localStorage.getItem('theme') === 'dark') {
+                    document.body.classList.add('dark');
+                } else {
+                    document.body.classList.remove('dark');
+                }
+            }
+            darkModeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+            });
+
+            // --- Lógica Principal con Firebase ---
+            function listenForPatients() {
+                showLoading("Cargando pacientes...");
+                if (unsubscribe) unsubscribe();
+                unsubscribe = db.collection("patients").orderBy("name").onSnapshot(snapshot => {
+                    patients = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderPatientList();
+                    hideLoading();
+                }, error => {
+                    console.error("Error al obtener pacientes:", error);
+                    alert("Error de Conexión: No se pudo conectar a la base de datos.");
+                    hideLoading();
+                });
+            }
+
+            function renderPatientList(filterText = '') {
+                patientListEl.innerHTML = '';
+                const filteredPatients = patients.filter(p => p.name.toLowerCase().includes(filterText.toLowerCase()));
+                if (filteredPatients.length === 0) patientListEl.innerHTML = `<p class="text-center text-gray-500 col-span-full">No hay pacientes registrados.</p>`;
+                
+                filteredPatients.forEach(patient => {
+                    const card = document.createElement('div');
+                    card.className = 'patient-card p-6 rounded-xl shadow-md border flex flex-col justify-between';
+                    card.innerHTML = `<div><p class="font-bold text-lg text-blue-800">${patient.name}</p><p class="text-sm text-gray-500">Edad: ${patient.age} años</p></div>
+                                      <div class="flex space-x-2 mt-4 self-end"><button class="view-btn bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm" data-id="${patient.id}">Ver/Editar</button><button class="delete-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm" data-id="${patient.id}">Eliminar</button></div>`;
+                    patientListEl.appendChild(card);
+                });
+            }
+            patientSearch.addEventListener('input', (e) => renderPatientList(e.target.value));
+
+            patientListEl.addEventListener('click', (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+                const id = target.dataset.id;
+                currentPatient = patients.find(p => p.id === id);
+                if (!currentPatient) return;
+
+                if (target.classList.contains('view-btn')) {
+                    showFormScreen(currentPatient);
+                } else if (target.classList.contains('delete-btn')) {
+                    if (confirm(`¿Seguro que quieres eliminar a ${currentPatient.name}?`)) deletePatient(id);
+                }
+            });
+
+            function showFormScreen(patient = null) {
+                currentPatient = patient;
+                patientForm.reset();
+                currentImageFile = null;
+                analyzeBtn.disabled = true;
+
+                if (patient) {
+                    document.getElementById('form-title').textContent = 'Editar Paciente';
+                    document.getElementById('patient-id').value = patient.id;
+                    document.getElementById('name').value = patient.name;
+                    document.getElementById('age').value = patient.age;
+                    document.getElementById('social-security').value = patient.socialSecurity || '';
+                    document.getElementById('medical-history').value = patient.medicalHistory || '';
+                    imagePreview.src = patient.imageUrl || '';
+                    imagePreview.classList.toggle('hidden', !patient.imageUrl);
+                    if (patient.imageUrl) analyzeBtn.disabled = false;
+                } else {
+                    document.getElementById('form-title').textContent = 'Añadir Nueva Paciente';
+                    document.getElementById('patient-id').value = '';
+                    imagePreview.classList.add('hidden');
+                }
+                showScreen(screens.form);
+            }
+            
+            addPatientBtn.addEventListener('click', () => showFormScreen(null));
+            cancelFormBtn.addEventListener('click', () => showScreen(screens.list));
+
+            imageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    imagePreview.src = URL.createObjectURL(file);
+                    imagePreview.classList.remove('hidden');
+                    currentImageFile = file;
+                    analyzeBtn.disabled = false;
+                }
+            });
+
+            async function uploadImage(file, patientId) {
+                if (!file) return null;
+                const filePath = `images/${patientId}/${Date.now()}_${file.name}`;
+                const fileRef = storage.ref(filePath);
+                await fileRef.put(file);
+                return await fileRef.getDownloadURL();
+            }
+
+            patientForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                showLoading("Guardando datos...");
+                const patientId = document.getElementById('patient-id').value;
+                const patientData = { name: document.getElementById('name').value, age: document.getElementById('age').value, socialSecurity: document.getElementById('social-security').value, medicalHistory: document.getElementById('medical-history').value };
+
+                try {
+                    if (patientId) { // Editando
+                        if (currentImageFile) patientData.imageUrl = await uploadImage(currentImageFile, patientId);
+                        await db.collection("patients").doc(patientId).update(patientData);
+                        alert('Paciente actualizado.');
+                    } else { // Creando
+                        const newRef = await db.collection("patients").add(patientData);
+                        if (currentImageFile) {
+                            const imageUrl = await uploadImage(currentImageFile, newRef.id);
+                            await newRef.update({ imageUrl });
+                        }
+                        alert('Paciente creado.');
+                    }
+                    showScreen(screens.list);
+                } catch (error) { console.error("Error al guardar:", error); alert("Error: No se pudieron guardar los datos.");
+                } finally { hideLoading(); }
+            });
+
+            async function deletePatient(id) {
+                showLoading("Eliminando paciente...");
+                try {
+                    const patient = patients.find(p => p.id === id);
+                    if (patient?.imageUrl) await storage.refFromURL(patient.imageUrl).delete();
+                    await db.collection("patients").doc(id).delete();
+                    alert('Paciente eliminado.');
+                } catch (error) { console.error("Error al eliminar:", error); alert("Error: No se pudo eliminar.");
+                } finally { hideLoading(); }
+            }
+
+            // --- INICIALIZACIÓN DE LA APP ---
+            applyTheme();
+            listenForPatients();
+            showScreen(screens.list);
         };
     </script>
 </body>
