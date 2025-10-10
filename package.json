@@ -2,10 +2,7 @@
   "name": "colpovision-app",
   "version": "1.0.0",
   "description": "Aplicación de informes colposcópicos",
-  "scripts": {
-    "start": "serve"
-  },
-  "devDependencies": {
-    "serve": "^14.0.0"
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3"
   }
 }
