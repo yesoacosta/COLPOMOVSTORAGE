@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ColpoVision Web App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        /* Estilos CSS de la aplicación */
+        body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; color: #1f2937; }
+        .dark body { background-color: #121212; color: #e2e8f0; }
+        .dark #app-container { background-color: #1f2937; }
+        .dark .bg-white { background-color: #1f2937; }
+        .dark .patient-card { background-color: #374151; border-color: #4b5563; }
+        .dark .report-editor { background-color: #1f2937; color: #e2e8f0; border-color: #4b5563; }
+        .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #e2e8f0; }
+        .dark .text-gray-500 { color: #cbd5e1; }
+        .dark input, .dark textarea { background-color: #374151; border-color: #4b5563; color: #e2e8f0; }
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(240, 244, 248, 0.9); z-index: 1000; justify-content: center; align-items: center; }
+        .dark #loading-overlay { background-color: rgba(18, 18, 18, 0.9); }
+        .spinner { border: 6px solid #e2e8f0; border-top: 6px solid #3b82f6; border-radius: 50%; width: 60px; height: 60px; animation: spin 1.2s linear infinite; }
+        .dark .spinner { border-color: #374151; border-top-color: #60a5fa; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-start justify-center min-h-screen p-4">
+    <div id="app-container" class="bg-white rounded-3xl shadow-xl p-8 lg:p-12 w-full max-w-7xl">
+        <div class="flex flex-col items-center justify-center mb-10 relative">
+            <button id="dark-mode-toggle" class="absolute top-0 right-0 p-2 text-gray-600 dark:text-gray-300 rounded-full">🌙</button>
+            <h1 class="text-4xl font-extrabold text-gray-900">ColpoVision</h1>
+            <p class="text-lg text-gray-500 mt-1">Generador de Informes Colposcópicos en la Nube</p>
+        </div>
+        <div id="patient-list-screen" class="space-y-6">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Lista de Pacientes</h2><input type="text" id="patient-search" placeholder="Buscar paciente..." class="w-64 p-3 border-2 border-gray-300 rounded-xl"></div>
+            <div id="patient-list" class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <button id="add-patient-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg">+ Añadir Nueva Paciente</button>
+        </div>
+        <div id="patient-form-screen" class="hidden">
+            <h2 id="form-title" class="text-2xl font-bold text-gray-800 mb-6"></h2>
+            <form id="patient-form" class="space-y-6">
+                <input type="hidden" id="patient-id">
+                <div><label for="name" class="block font-semibold mb-2">Nombre</label><input type="text" id="name" required class="w-full p-4 border-2 border-gray-300 rounded-xl"></div>
+                <div><label for="age" class="block font-semibold mb-2">Edad</label><input type="number" id="age" required class="w-full p-4 border-2 border-gray-300 rounded-xl"></div>
+                <div><label for="social-security" class="block font-semibold mb-2">Obra Social</label><input type="text" id="social-security" class="w-full p-4 border-2 border-gray-300 rounded-xl"></div>
+                <div><label for="medical-history" class="block font-semibold mb-2">Historial Médico</label><textarea id="medical-history" rows="4" class="w-full p-4 border-2 border-gray-300 rounded-xl"></textarea></div>
+                <div><label for="colpo-image" class="block font-semibold mb-2">Imagen Colposcópica</label><input type="file" id="colpo-image" accept="image/*" class="w-full p-4 border-2 border-gray-300 rounded-xl"><img id="image-preview" class="mt-4 hidden w-full h-64 object-contain rounded-xl border"></div>
+                <div id="action-buttons" class="space-y-4 pt-4">
+                    <button type="button" id="analyze-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>Analizar y Generar Informe con IA</button>
+                    <div class="flex space-x-4"><button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl">Guardar Datos</button><button type="button" id="cancel-form-btn" class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-4 rounded-xl">Cancelar</button></div>
+                </div>
+            </form>
+        </div>
+        </div>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyCaUWw6-odmRFoglotYFqvuOX4bY6Ol9KU",
+          authDomain: "colpomov.firebaseapp.com",
+          projectId: "colpomov",
+          storageBucket: "colpomov.firebasestorage.app",
+          messagingSenderId: "78086675183",
+          appId: "1:78086675183:web:77c5a2d219ebbcddf8191a"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        
+        // CORRECCIÓN FINAL: Usamos la ruta relativa porque el HTML y la API vivirán en el mismo dominio de Vercel
+        const apiUrl = "/api/generate";
+
+        // Lógica de la aplicación
+        window.onload = function() {
+            // El resto del código JavaScript va aquí...
+        };
+    </script>
+</body>
+</html>
