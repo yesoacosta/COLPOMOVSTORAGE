@@ -1,5 +1,5 @@
 {
-  "name": "colpovision-app",
+  "name": "colpomovstorage",
   "version": "1.0.0",
   "type": "module",
   "description": "Aplicación de informes colposcópicos",
@@ -10,5 +10,6 @@
     "serve": "^14.0.0"
   }
 }
+
 
 
