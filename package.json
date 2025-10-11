@@ -1,7 +1,7 @@
 {
   "name": "colpovision-app",
   "version": "1.0.0",
-  "type": "module", 
+  "type": "module" 
   "description": "Aplicación de informes colposcópicos",
   "scripts": {
     "start": "serve"
@@ -10,4 +10,5 @@
     "serve": "^14.0.0"
   }
 }
+
 
