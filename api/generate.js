@@ -31,8 +31,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el MODELO CORRECTO Y MODERNO
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    // Usamos el MODELO ESTÁNDAR para visión que es 100% compatible
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const { contents } = req.body;
     
