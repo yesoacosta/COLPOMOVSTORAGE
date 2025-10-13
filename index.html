@@ -89,6 +89,7 @@
             let patients = [];
             let currentPatient = null;
             let currentImageFile = null;
+            let generatedReportText = null; // Variable para guardar temporalmente el informe
             let unsubscribe = null;
 
             function showLoading(message) { loadingMessage.textContent = message; loadingOverlay.style.display = 'flex'; }
@@ -147,6 +148,7 @@
                 currentPatient = patient;
                 patientForm.reset();
                 currentImageFile = null;
+                generatedReportText = null; // Reiniciar el informe temporal
                 analyzeBtn.disabled = true;
 
                 if (patient) {
@@ -180,10 +182,6 @@
                 }
             });
             
-            // =================================================================================
-            // !! LÓGICA DEL BOTÓN ANALIZAR CORREGIDA !!
-            // Ahora funciona tanto para imágenes nuevas como para las ya existentes.
-            // =================================================================================
             analyzeBtn.addEventListener('click', async () => {
                 if (!currentImageFile && !currentPatient?.imageUrl) {
                     alert("No hay una imagen disponible para analizar.");
@@ -192,22 +190,15 @@
                 
                 showLoading("Analizando imagen con IA...");
                 
-                let imageBlob;
-                let imageMimeType;
-
                 try {
+                    let imageBlob;
                     if (currentImageFile) {
-                        // Si hay un archivo nuevo, lo usamos directamente
                         imageBlob = currentImageFile;
-                        imageMimeType = currentImageFile.type;
                     } else {
-                        // Si no, descargamos la imagen existente desde su URL
                         const response = await fetch(currentPatient.imageUrl);
                         imageBlob = await response.blob();
-                        imageMimeType = imageBlob.type;
                     }
 
-                    // Función para convertir el Blob (archivo) a Base64
                     const getBase64 = (file) => new Promise((resolve, reject) => {
                         const reader = new FileReader();
                         reader.readAsDataURL(file);
@@ -222,10 +213,13 @@
                     const apiResponse = await fetch(apiUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType: imageMimeType, data: imageBase64 } }] }] })
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }, { inlineData: { mimeType: imageBlob.type, data: imageBase64 } }] }] })
                     });
                     
-                    if (!apiResponse.ok) throw new Error(`Error de la API: ${apiResponse.statusText}`);
+                    if (!apiResponse.ok) {
+                        const errorData = await apiResponse.json();
+                        throw new Error(`Error de la API: ${errorData.error || apiResponse.statusText}`);
+                    }
                     
                     const result = await apiResponse.json();
                     const reportText = result.candidates[0].content.parts[0].text;
@@ -233,9 +227,10 @@
                     if (currentPatient && currentPatient.id) {
                         await db.collection("patients").doc(currentPatient.id).update({ reportText });
                         alert("Informe generado y guardado exitosamente.");
-                        showScreen(screens.list);
                     } else {
-                        alert("Informe generado. Guarda los datos de la nueva paciente para conservarlo.");
+                        // Guardar el informe en la variable temporal para la nueva paciente
+                        generatedReportText = reportText;
+                        alert("Informe generado con éxito. Guarda los datos de la paciente para asociarlo.");
                     }
                 } catch (error) {
                     console.error("Error al generar informe:", error);
@@ -257,7 +252,17 @@
                 event.preventDefault();
                 showLoading("Guardando datos...");
                 const patientId = document.getElementById('patient-id').value;
-                const patientData = { name: document.getElementById('name').value, age: document.getElementById('age').value, socialSecurity: document.getElementById('social-security').value, medicalHistory: document.getElementById('medical-history').value };
+                const patientData = { 
+                    name: document.getElementById('name').value, 
+                    age: document.getElementById('age').value, 
+                    socialSecurity: document.getElementById('social-security').value, 
+                    medicalHistory: document.getElementById('medical-history').value 
+                };
+
+                // Si hay un informe generado para una nueva paciente, lo incluimos
+                if (!patientId && generatedReportText) {
+                    patientData.reportText = generatedReportText;
+                }
 
                 try {
                     if (patientId) {
@@ -273,19 +278,33 @@
                         alert('Paciente creado.');
                     }
                     showScreen(screens.list);
-                } catch (error) { console.error("Error al guardar:", error); alert("Error: No se pudieron guardar los datos.");
-                } finally { hideLoading(); }
+                } catch (error) { 
+                    console.error("Error al guardar:", error); 
+                    alert("Error: No se pudieron guardar los datos.");
+                } finally { 
+                    hideLoading(); 
+                }
             });
 
             async function deletePatient(id) {
                 showLoading("Eliminando paciente...");
                 try {
                     const patient = patients.find(p => p.id === id);
-                    if (patient?.imageUrl) await storage.refFromURL(patient.imageUrl).delete();
+                    if (patient?.imageUrl) {
+                        try {
+                            await storage.refFromURL(patient.imageUrl).delete();
+                        } catch (storageError) {
+                            console.warn("La imagen no existía en Storage, se procede a borrar solo los datos.");
+                        }
+                    }
                     await db.collection("patients").doc(id).delete();
                     alert('Paciente eliminado.');
-                } catch (error) { console.error("Error al eliminar:", error); alert("Error: No se pudo eliminar.");
-                } finally { hideLoading(); }
+                } catch (error) { 
+                    console.error("Error al eliminar:", error); 
+                    alert("Error: No se pudo eliminar.");
+                } finally { 
+                    hideLoading(); 
+                }
             }
 
             applyTheme();
