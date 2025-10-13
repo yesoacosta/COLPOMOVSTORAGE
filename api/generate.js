@@ -1,6 +1,7 @@
-// AÑADIMOS ESTA LÍNEA PARA AUMENTAR EL TIEMPO DE ESPERA
+// Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
+// Importamos desde la LIBRERÍA CORRECTA Y ACTUALIZADA
 import { GoogleGenerativeAI } from "@google/genai";
 
 // Inicializa la IA con la clave de API desde las variables de entorno de Vercel
@@ -30,7 +31,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    // Usamos el MODELO CORRECTO Y MODERNO
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+    
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
