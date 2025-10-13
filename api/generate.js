@@ -1,3 +1,6 @@
+// AÑADIMOS ESTA LÍNEA PARA AUMENTAR EL TIEMPO DE ESPERA
+export const maxDuration = 60; 
+
 import { GoogleGenerativeAI } from "@google/genai";
 
 // Inicializa la IA con la clave de API desde las variables de entorno de Vercel
@@ -5,12 +8,12 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Función principal que Vercel ejecutará
 export default async function handler(req, res) {
-  // Configurar cabeceras CORS para permitir solicitudes desde cualquier origen
+  // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Manejar solicitud OPTIONS de "pre-vuelo"
+  // Manejar solicitud OPTIONS
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -20,16 +23,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Validar que la clave de API esté presente en el servidor
+  // Validar que la clave de API esté presente
   if (!process.env.GEMINI_API_KEY) {
     console.error("La variable de entorno GEMINI_API_KEY no está configurada.");
     return res.status(500).json({ error: "Configuración del servidor incompleta." });
   }
 
   try {
-    // Usamos el modelo estándar para visión, que es compatible con la nueva librería
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
-    
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
@@ -37,7 +38,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
     
-    // Extraer el prompt y las partes de la imagen
     const prompt = contents[0].parts.find(part => part.text)?.text;
     const imageParts = contents[0].parts.filter(part => part.inlineData);
     
