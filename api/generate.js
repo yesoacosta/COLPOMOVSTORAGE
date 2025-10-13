@@ -27,7 +27,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    // === CAMBIO IMPORTANTE AQUÍ ===
+    // Se actualizó al nombre del modelo correcto y moderno.
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
@@ -36,7 +39,7 @@ export default async function handler(req, res) {
     }
     
     // Extraer el prompt y las partes de la imagen
-    const prompt = contents[0].parts[0].text;
+    const prompt = contents[0].parts.find(part => part.text)?.text;
     const imageParts = contents[0].parts.filter(part => part.inlineData);
     
     if (!prompt || imageParts.length === 0) {
