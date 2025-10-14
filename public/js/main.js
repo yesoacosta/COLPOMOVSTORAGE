@@ -10,7 +10,14 @@ let generatedReportText = null;
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
+    // !! LA LÍNEA QUE FALTABA !!
+    // Primero, nos aseguramos de que todas las variables de UI (botones, formularios) estén cargadas.
+    UI.initializeDOMElements();
+
+    // Ahora que los elementos existen, podemos configurar los listeners.
     setupEventListeners();
+
+    // El resto del código de inicialización.
     UI.applyTheme();
     UI.showLoading("Cargando pacientes...");
     DB.listenForPatients(handlePatientUpdate);
