@@ -10,14 +10,14 @@ let generatedReportText = null;
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
-    // !! LA LÍNEA QUE FALTABA !!
-    // Primero, nos aseguramos de que todas las variables de UI (botones, formularios) estén cargadas.
+    // === LA CORRECCIÓN ESTÁ AQUÍ ===
+    // 1. PRIMERO: Le decimos a la UI que busque y cargue todos los elementos del HTML.
     UI.initializeDOMElements();
 
-    // Ahora que los elementos existen, podemos configurar los listeners.
+    // 2. SEGUNDO: Ahora que los botones y formularios ya existen en memoria, les asignamos sus funciones.
     setupEventListeners();
 
-    // El resto del código de inicialización.
+    // 3. TERCERO: Continuamos con el resto de la carga.
     UI.applyTheme();
     UI.showLoading("Cargando pacientes...");
     DB.listenForPatients(handlePatientUpdate);
@@ -42,7 +42,7 @@ function setupEventListeners() {
     UI.patientSearch.addEventListener('input', (e) => UI.renderPatientList(allPatients, e.target.value));
     UI.imageInput.addEventListener('change', handleImageInputChange);
     
-    // Acciones en la lista de pacientes (usando delegación de eventos)
+    // Acciones en la lista de pacientes
     UI.patientListEl.addEventListener('click', handlePatientListActions);
     
     // Botón de análisis IA
