@@ -1,10 +1,10 @@
 {
-  "name": "colpomovstorage",
+  "name": "colpomovstorage-modular",
   "version": "1.0.0",
   "type": "module",
-  "description": "Aplicación de informes colposcópicos",
+  "description": "Aplicación modular de informes colposcópicos",
   "scripts": {
-    "start": "serve"
+    "start": "serve ./public"
   },
   "dependencies": {
     "@google/genai": "^0.3.1"
