@@ -1,7 +1,7 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
-// === LA CORRECCIÓN ESTÁ AQUÍ ===
+// === LA CORRECCIÓN REAL Y DEFINITIVA ESTÁ AQUÍ ===
 // Importamos la librería usando el método compatible que nos sugiere el error.
 import pkg from '@google/genai';
 const { GoogleGenerativeAI } = pkg;
