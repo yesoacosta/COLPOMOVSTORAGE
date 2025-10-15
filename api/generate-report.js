@@ -32,10 +32,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-    // 1. Apuntamos a la versión 'v1beta' de la API, que es la que soporta este modelo.
+    // === LA CORRECCIÓN DEFINITIVA BASADA EN TU ANÁLISIS ===
+    // 1. Usamos la combinación de API 'v1beta' y modelo 'flash' que sabemos que funciona.
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     // 2. Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
@@ -55,7 +55,12 @@ export default async function handler(req, res) {
     }
     
     // 4. Extraemos el texto de la respuesta exitosa
-    const text = responseData.candidates[0].content.parts[0].text;
+    const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    if (!text) {
+        console.error('Respuesta de la IA vacía o en formato inesperado:', responseData);
+        throw new Error('La IA respondió, pero el formato del texto no es el esperado.');
+    }
     
     res.status(200).json({
       candidates: [{
