@@ -2,7 +2,7 @@
 export const maxDuration = 60; 
 
 // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-// Importamos la librería usando el método compatible.
+// Importamos la librería CORRECTA (@google/genai) con la sintaxis CORRECTA.
 import pkg from '@google/genai';
 const { GoogleGenerativeAI } = pkg;
 
