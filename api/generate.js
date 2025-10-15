@@ -1,11 +1,18 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
-export const maxDuration = 60;
+export const maxDuration = 60; 
+
+// === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
+// Usamos la sintaxis 'require' de CommonJS, la forma más compatible
+// para resolver conflictos de módulos en el entorno de Vercel.
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { GoogleGenerativeAI } = require('@google/genai');
+
+// Inicializa la IA con la clave de API desde las variables de entorno de Vercel
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Función principal que Vercel ejecutará
 export default async function handler(req, res) {
-  // Importación dinámica DENTRO de la función
-  const { GoogleGenerativeAI } = await import('@google/generative-ai');
-  
   // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -28,18 +35,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Inicializar DENTRO de la función
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // USA ESTE MODELO: gemini-1.5-pro (soporta imágenes)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Usamos el modelo estándar y estable para visión
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
-    if (!contents || !Array.isArray(contents) || contents.length === 0 || 
-        !contents[0].parts || !Array.isArray(contents[0].parts) || 
-        contents[0].parts.length < 2) {
+    if (!contents || !Array.isArray(contents) || contents.length === 0 || !contents[0].parts || !Array.isArray(contents[0].parts) || contents[0].parts.length < 2) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
     
@@ -50,18 +52,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Falta el prompt o la imagen en la solicitud." });
     }
 
-    // Construir el contenido en el formato correcto
-    const contentParts = [
-      { text: prompt },
-      ...imageParts.map(img => ({
-        inlineData: {
-          mimeType: img.inlineData.mimeType,
-          data: img.inlineData.data
-        }
-      }))
-    ];
-
-    const result = await model.generateContent(contentParts);
+    const result = await model.generateContent([prompt, ...imageParts]);
     const response = result.response;
     
     res.status(200).json({
