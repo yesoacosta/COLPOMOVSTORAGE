@@ -3,11 +3,6 @@ export const maxDuration = 60;
 
 // Función principal que Vercel ejecutará
 export default async function handler(req, res) {
-  // === LA CORRECCIÓN #1 ESTÁ AQUÍ ===
-  // Hacemos una "importación dinámica" DENTRO de la función.
-  // Esto resuelve los conflictos de módulos en el entorno de Vercel.
-  const { GoogleGenerativeAI } = await import('@google/genai');
-
   // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,40 +25,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Inicializamos la IA aquí, después de la importación
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
-    
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
     if (!contents || !contents[0]?.parts || contents[0].parts.length < 2) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
-    
-    // === LA CORRECCIÓN #2 ESTÁ AQUÍ ===
-    // La nueva librería espera un formato de datos ligeramente diferente.
-    // Re-estructuramos los datos que nos llegan de la app para que coincidan.
-    const prompt = contents[0].parts.find(part => part.text)?.text;
-    const imagePart = contents[0].parts.find(part => part.inlineData);
 
-    if (!prompt || !imagePart) {
-      return res.status(400).json({ error: "Falta el prompt o la imagen en la solicitud." });
+    // === LA SOLUCIÓN DEFINITIVA ESTÁ AQUÍ ===
+    // 1. Construimos la URL del endpoint de la API de Google
+    const apiKey = process.env.GEMINI_API_KEY;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+
+    // 2. Hacemos la llamada a la API usando `fetch`, sin ninguna librería externa
+    const fetchResponse = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contents }), // Enviamos los contenidos tal como llegan
+    });
+
+    const responseData = await fetchResponse.json();
+
+    // 3. Verificamos si Google devolvió un error
+    if (!fetchResponse.ok || responseData.error) {
+        console.error('Error desde la API de Google:', responseData);
+        throw new Error(responseData.error?.message || 'La IA no pudo procesar la solicitud.');
     }
     
-    // Este es el formato que la nueva librería entiende
-    const parts = [
-      { text: prompt },
-      { inlineData: imagePart.inlineData }
-    ];
-
-    const result = await model.generateContent(parts);
-    const response = result.response;
+    // 4. Extraemos el texto de la respuesta exitosa
+    const text = responseData.candidates[0].content.parts[0].text;
     
     res.status(200).json({
       candidates: [{
         content: {
-          parts: [{ text: response.text() }]
+          parts: [{ text: text }]
         }
       }]
     });
