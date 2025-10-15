@@ -31,8 +31,8 @@ export default async function handler(req, res) {
     // Inicializar DENTRO de la función
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // Modelo CORRECTO para visión
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // USA ESTE MODELO: gemini-1.5-pro (soporta imágenes)
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     
     const { contents } = req.body;
     
@@ -50,7 +50,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Falta el prompt o la imagen en la solicitud." });
     }
 
-    const result = await model.generateContent([prompt, ...imageParts]);
+    // Construir el contenido en el formato correcto
+    const contentParts = [
+      { text: prompt },
+      ...imageParts.map(img => ({
+        inlineData: {
+          mimeType: img.inlineData.mimeType,
+          data: img.inlineData.data
+        }
+      }))
+    ];
+
+    const result = await model.generateContent(contentParts);
     const response = result.response;
     
     res.status(200).json({
