@@ -32,18 +32,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // === LA SOLUCIÓN DEFINITIVA ESTÁ AQUÍ ===
-    // 1. Construimos la URL del endpoint de la API de Google
+    // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
+    // 1. Apuntamos a la versión 'v1' de la API en lugar de 'v1beta'
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${apiKey}`;
 
-    // 2. Hacemos la llamada a la API usando `fetch`, sin ninguna librería externa
+    // 2. Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ contents }), // Enviamos los contenidos tal como llegan
+      body: JSON.stringify({ contents }),
     });
 
     const responseData = await fetchResponse.json();
