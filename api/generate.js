@@ -2,9 +2,11 @@
 export const maxDuration = 60; 
 
 // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-// Importamos la librería CORRECTA (@google/genai) con la sintaxis CORRECTA.
-import pkg from '@google/genai';
-const { GoogleGenerativeAI } = pkg;
+// Usamos la sintaxis 'require' de CommonJS, la forma más compatible
+// para resolver conflictos de módulos en el entorno de Vercel.
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { GoogleGenerativeAI } = require('@google/genai');
 
 // Inicializa la IA con la clave de API desde las variables de entorno de Vercel
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el modelo estándar para visión
+    // Usamos el modelo estándar y estable para visión
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const { contents } = req.body;
