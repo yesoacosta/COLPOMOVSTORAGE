@@ -1,8 +1,10 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
-// Importamos la librería correcta que definimos en package.json
-import { GoogleGenerativeAI } from "@google/genai";
+// === LA CORRECCIÓN ESTÁ AQUÍ ===
+// Importamos la librería usando el método compatible que nos sugiere el error.
+import pkg from '@google/genai';
+const { GoogleGenerativeAI } = pkg;
 
 // Inicializa la IA con la clave de API desde las variables de entorno de Vercel
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
