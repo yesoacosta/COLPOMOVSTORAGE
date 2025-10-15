@@ -32,12 +32,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // === LA CORRECCIÓN FINAL ESTÁ AQUÍ ===
-    // 1. Usamos la URL y el nombre de modelo EXACTOS del proyecto que SÍ funciona.
+    // Usamos la URL y el nombre de modelo EXACTOS del proyecto que SÍ funciona.
     const apiKey = process.env.GEMINI_API_KEY;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-    // 2. Hacemos la llamada a la API usando `fetch`
+    // Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -48,13 +47,13 @@ export default async function handler(req, res) {
 
     const responseData = await fetchResponse.json();
 
-    // 3. Verificamos si Google devolvió un error
+    // Verificamos si Google devolvió un error
     if (!fetchResponse.ok || responseData.error) {
         console.error('Error desde la API de Google:', responseData);
         throw new Error(responseData.error?.message || 'La IA no pudo procesar la solicitud.');
     }
     
-    // 4. Extraemos el texto de la respuesta exitosa
+    // Extraemos el texto de la respuesta exitosa
     const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
     if (!text) {
