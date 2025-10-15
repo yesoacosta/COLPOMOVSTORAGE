@@ -32,10 +32,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-    // 1. Usamos la URL y el nombre de modelo EXACTOS del proyecto que SÍ funciona.
+    // === LA CORRECCIÓN BASADA EN TU ANÁLISIS ===
+    // 1. Usamos el modelo correcto con la versión 'v1' (estable) de la API.
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+    const modelName = 'gemini-1.5-flash-preview-05-20'; // El modelo que sabemos que es válido
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
 
     // 2. Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
@@ -78,5 +79,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-
