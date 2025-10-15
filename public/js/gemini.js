@@ -1,4 +1,8 @@
-const API_URL = "/api/generate";
+// public/js/gemini.js
+
+// === LA CORRECCIÓN ESTÁ AQUÍ ===
+// Apuntamos a la nueva ruta del servidor que acabamos de crear.
+const API_URL = "/api/generate-report";
 
 // Función para obtener el informe de la IA
 export async function generateReport(imageBlob, medicalHistory) {
