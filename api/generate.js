@@ -1,13 +1,16 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
+// === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
+// Importamos la librería CORRECTA (@google/genai) con la sintaxis CORRECTA.
+import pkg from '@google/genai';
+const { GoogleGenerativeAI } = pkg;
+
+// Inicializa la IA con la clave de API desde las variables de entorno de Vercel
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 // Función principal que Vercel ejecutará
 export default async function handler(req, res) {
-  // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-  // Hacemos una "importación dinámica" DENTRO de la función.
-  // Esto resuelve los conflictos de módulos en el entorno de Vercel.
-  const { GoogleGenerativeAI } = await import('@google/genai');
-
   // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,10 +33,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Inicializamos la IA aquí, después de la importación
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // Usamos el modelo estándar y estable para visión
+    // Usamos el modelo estándar para visión
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const { contents } = req.body;
