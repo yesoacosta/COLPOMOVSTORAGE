@@ -1,5 +1,3 @@
-// api/generate-report.js
-
 // Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
@@ -34,11 +32,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // Usamos la URL correcta con la versión v1 de la API
+    // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
+    // 1. Apuntamos a la versión 'v1beta' de la API, que es la que soporta este modelo.
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
 
-    // Hacemos la llamada a la API usando `fetch`
+    // 2. Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -49,13 +48,13 @@ export default async function handler(req, res) {
 
     const responseData = await fetchResponse.json();
 
-    // Verificamos si Google devolvió un error
+    // 3. Verificamos si Google devolvió un error
     if (!fetchResponse.ok || responseData.error) {
         console.error('Error desde la API de Google:', responseData);
         throw new Error(responseData.error?.message || 'La IA no pudo procesar la solicitud.');
     }
     
-    // Extraemos el texto de la respuesta exitosa
+    // 4. Extraemos el texto de la respuesta exitosa
     const text = responseData.candidates[0].content.parts[0].text;
     
     res.status(200).json({
