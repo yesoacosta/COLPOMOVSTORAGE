@@ -6,9 +6,7 @@
   "scripts": {
     "start": "serve ./public"
   },
-  "dependencies": {
-    "@google/genai": "^0.3.1"
-  },
+  "dependencies": {},
   "devDependencies": {
     "serve": "^14.0.0"
   }
