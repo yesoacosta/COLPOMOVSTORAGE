@@ -33,9 +33,9 @@ export default async function handler(req, res) {
     }
 
     // === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-    // 1. Apuntamos a la versión 'v1beta' de la API, que es la que soporta este modelo.
+    // 1. Apuntamos a la versión 'v1' (estable) de la API en lugar de 'v1beta'
     const apiKey = process.env.GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=${apiKey}`;
 
     // 2. Hacemos la llamada a la API usando `fetch`
     const fetchResponse = await fetch(apiUrl, {
