@@ -1,16 +1,11 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
-export const maxDuration = 60; 
-
-// === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-// Importamos la librería CORRECTA (@google/genai) con la sintaxis CORRECTA.
-import pkg from '@google/genai';
-const { GoogleGenerativeAI } = pkg;
-
-// Inicializa la IA con la clave de API desde las variables de entorno de Vercel
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+export const maxDuration = 60;
 
 // Función principal que Vercel ejecutará
 export default async function handler(req, res) {
+  // Importación dinámica DENTRO de la función
+  const { GoogleGenerativeAI } = await import('@google/generative-ai');
+  
   // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -33,13 +28,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el modelo estándar para visión
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    // Inicializar DENTRO de la función
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // Modelo CORRECTO para visión
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     const { contents } = req.body;
     
     // Validar la estructura del cuerpo de la solicitud
-    if (!contents || !Array.isArray(contents) || contents.length === 0 || !contents[0].parts || !Array.isArray(contents[0].parts) || contents[0].parts.length < 2) {
+    if (!contents || !Array.isArray(contents) || contents.length === 0 || 
+        !contents[0].parts || !Array.isArray(contents[0].parts) || 
+        contents[0].parts.length < 2) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
     
