@@ -1,7 +1,7 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
 export const maxDuration = 60; 
 
-// Función principal que Vercel ejecutará
+// Función principal que Vercel ejecutará (SIN NINGUNA LIBRERÍA DE GOOGLE)
 export default async function handler(req, res) {
   // Configurar cabeceras CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,28 +32,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
     }
 
-    // Usamos la URL y el nombre de modelo EXACTOS del proyecto que SÍ funciona.
+    // === LA SOLUCIÓN DEFINITIVA ESTÁ AQUÍ ===
+    // 1. Usamos la URL y el nombre de modelo EXACTOS del proyecto que SÍ funciona.
     const apiKey = process.env.GEMINI_API_KEY;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-    // Hacemos la llamada a la API usando `fetch`
+    // 2. Hacemos la llamada a la API usando `fetch`, sin ninguna librería externa
     const fetchResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ contents }),
+      body: JSON.stringify({ contents }), // Enviamos los contenidos tal como llegan
     });
 
     const responseData = await fetchResponse.json();
 
-    // Verificamos si Google devolvió un error
+    // 3. Verificamos si Google devolvió un error
     if (!fetchResponse.ok || responseData.error) {
         console.error('Error desde la API de Google:', responseData);
         throw new Error(responseData.error?.message || 'La IA no pudo procesar la solicitud.');
     }
     
-    // Extraemos el texto de la respuesta exitosa
+    // 4. Extraemos el texto de la respuesta exitosa
     const text = responseData.candidates?.[0]?.content?.parts?.[0]?.text || "";
     
     if (!text) {
