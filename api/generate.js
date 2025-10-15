@@ -1,14 +1,12 @@
 // Aumenta el tiempo de espera de la función a 60 segundos
-export const maxDuration = 60; 
+export const maxDuration = 60;
 
-// === LA CORRECCIÓN DEFINITIVA ESTÁ AQUÍ ===
-// Usamos la sintaxis 'require' de CommonJS, la forma más compatible
-// para resolver conflictos de módulos en el entorno de Vercel.
+// Importa el SDK nuevo con require para máxima compatibilidad en Vercel
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { GoogleGenerativeAI } = require('@google/genai');
 
-// Inicializa la IA con la clave de API desde las variables de entorno de Vercel
+// Inicializa la IA con la clave de API desde las variables de entorno
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Función principal que Vercel ejecutará
@@ -35,7 +33,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usamos el modelo estándar y estable para visión
+    // Usamos el modelo moderno y estable para visión
     const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const { contents } = req.body;
